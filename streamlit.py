@@ -2,16 +2,40 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 import numpy as np
+import json
 import requests
 import csv
+import geopandas
+import folium
+from streamlit_folium import folium_static
+# from bokeh.plotting import figure
+# from bokeh.io import show
+from matplotlib import pyplot as plt
+# import pandas_bokeh
 
 
 st.title("Healthy Districts")
 
 st.write("This is outside the container")
 
+data_geo = json.load(open('healthy_districts.geojson'))
 
-@st.cache
+# def center():
+#    address = 'Chicago, USA'
+#    geolocator = Nominatim(user_agent="id_explorer")
+#    location = geolocator.geocode(address)
+#    latitude = location.latitude
+#    longitude = location.longitude
+#    return latitude, longitude
+
+#for changing type of the maps
+add_select = st.sidebar.selectbox("What data do you want to see?",("OpenStreetMap", "Stamen Terrain","Stamen Toner"))#for calling the function for getting center of maps
+centers = (37, -90)
+map_sby = folium.Map(tiles=add_select, zoom_start=12)#design for the app
+st.title('Map of USA Congressional Districts')
+folium_static(map_sby)
+
+
 health_df = pd.read_csv("district_data.csv")
 # The LCL and UCL columns represent the lower- and upper- confidence levels for the metrics.
 # Here those columns are removed.
