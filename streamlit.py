@@ -1,12 +1,17 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import numpy as np
 import requests
 import csv
 
 
 st.title("Healthy Districts")
 
+st.write("This is outside the container")
+
+
+@st.cache
 health_df = pd.read_csv("district_data.csv")
 # The LCL and UCL columns represent the lower- and upper- confidence levels for the metrics.
 # Here those columns are removed.
@@ -62,7 +67,6 @@ health_df['mhlth'] = health_df['mhlth'].str.strip('%').astype('float')/100.0
 health_df['obesity'] = health_df['obesity'].str.strip(
     '%').astype('float')/100.0
 
-st.dataframe(health_df)
 
 acsurl = "https://api.census.gov/data/2018/acs/acs1?get=NAME,B01001_001E,B02001_002E,B02001_003E,B02001_004E,B02001_005E,B02001_006E,B02001_007E,B02001_008E,B03003_003E,B29001_001E,B19013_001E,B19301_001E,B25077_001E,B25064_001E,B19083_001E,B25001_001E,B25002_002E,B25003_002E,B25003_003E,B25002_003E&for=congressional%20district:*"
 
@@ -113,7 +117,6 @@ acs_df['other_race'] = acs_df['other_race'].astype('float')
 acs_df['two_more_races'] = acs_df['two_more_races'].astype('float')
 acs_df['hispanic_latino'] = acs_df['hispanic_latino'].astype('float')
 acs_df['citizen_voters'] = acs_df['citizen_voters'].astype('float')
-
 acs_df['white_p'] = acs_df['white']/acs_df['totalpop']
 acs_df['black_p'] = acs_df['black']/acs_df['totalpop']
 acs_df['amerindian_native_p'] = acs_df['amerindian_native']/acs_df['totalpop']
@@ -124,7 +127,6 @@ acs_df['two_more_races_p'] = acs_df['two_more_races']/acs_df['totalpop']
 acs_df['hispanic_latino_p'] = acs_df['hispanic_latino']/acs_df['totalpop']
 acs_df['citizen_voters_p'] = acs_df['citizen_voters']/acs_df['totalpop']
 
-st.dataframe(acs_df)
 
 # Requesting current updated congressional data
 # from https://github.com/unitedstates/congress-legislators
@@ -145,7 +147,6 @@ indexNames = congress_df[congress_df['type'] == 'sen'].index
 # Delete these row indexes from dataFrame
 congress_df.drop(indexNames, inplace=True)
 
-st.dataframe(congress_df)
 
 # Getting State FIPS Codes with State Numbers to go with State Abbreviations in Congress file
 fips = pd.read_csv('us-state-ansi-fips.csv')
@@ -191,25 +192,53 @@ healthy_districts_df = health_acs_congress_merge[['GEOID',
                                                   'twitter'
                                                   ]]
 
-healthy_districts_df.set_index('GEOID')
 
-st.dataframe(healthy_districts_df)
+table_data_df=healthy_districts_df[['state_district',
+                             'full_name',
+                             'party',
+                             'median_household_income',
+                             'amerindian_native',
+                             'asian',
+                             'black',
+                             'white',
+                             'hispanic_latino',
+                             'lackinsurance',
+                             'csmoking',
+                             'diabetes',
+                             'obesity']]
 
-data = healthy_districts_df
-data /= 1000000.0
-st.write("Population of Districts", data.sort_index())
+table_data_df= table_data_df.rename(columns = {'state_district': 'District',
+                                     'full_name': 'Representative',
+                                     'party': 'Political Party',
+                                     'median_household_income': 'Median Income',
+                                     'amerindian_native': 'American Indian/Alaskan Native',
+                                     'asian': 'Asian',
+                                    'black': 'Black',
+                                     'white': 'White',
+                                     'hispanic_latino': "Hispanic/Latino All Races",
+                                     'lackinsurance': 'Uninsured',
+                                     'csmoking': 'Currently Smoking',
+                                     'diabetes': 'Adult Diabetics',
+                                     'obesity': 'Obesity'}, 
+                                   )
 
-data = data.healthy_districts_df.reset_index()
-data = pd.melt(data, id_vars=["index"]).rename(
-    columns={"index": "state_district", "value": "totalpop"}
-)
-chart = (
-    alt.Chart(data)
-    .mark_area(opacity=0.3)
-    .encode(
-        x="state_district",
-        y=alt.Y("totalpop", stack=None),
+st.dataframe(table_data_df)
 
-    )
-)
-st.altair_chart(chart, use_container_width=True)
+
+#Create scatter plots
+with st.beta_container():
+    st.write("This is inside the container")
+
+    # You can call any Streamlit command, including custom components:
+    st.bar_chart(np.random.randn(50, 3))
+
+col1, col2 = st.beta_columns([3, 1])
+data = np.random.randn(10, 1)
+
+col1.subheader("A wide column with a chart")
+col1.line_chart(data)
+
+col2.subheader("A narrow column with the data")
+col2.write(data)
+
+st.balloons()
