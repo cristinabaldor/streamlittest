@@ -18,23 +18,6 @@ st.title("Healthy Districts")
 
 st.write("This is outside the container")
 
-data_geo = json.load(open('healthy_districts.geojson'))
-
-# def center():
-#    address = 'Chicago, USA'
-#    geolocator = Nominatim(user_agent="id_explorer")
-#    location = geolocator.geocode(address)
-#    latitude = location.latitude
-#    longitude = location.longitude
-#    return latitude, longitude
-
-#for changing type of the maps
-add_select = st.sidebar.selectbox("What data do you want to see?",("OpenStreetMap", "Stamen Terrain","Stamen Toner"))#for calling the function for getting center of maps
-centers = (37, -90)
-map_sby = folium.Map(tiles=add_select, zoom_start=12)#design for the app
-st.title('Map of USA Congressional Districts')
-folium_static(map_sby)
-
 
 health_df = pd.read_csv("district_data.csv")
 # The LCL and UCL columns represent the lower- and upper- confidence levels for the metrics.
@@ -217,39 +200,94 @@ healthy_districts_df = health_acs_congress_merge[['GEOID',
                                                   ]]
 
 
-table_data_df=healthy_districts_df[['state_district',
-                             'full_name',
-                             'party',
-                             'median_household_income',
-                             'amerindian_native',
-                             'asian',
-                             'black',
-                             'white',
-                             'hispanic_latino',
-                             'lackinsurance',
-                             'csmoking',
-                             'diabetes',
-                             'obesity']]
+table_data_df = healthy_districts_df[['state_district',
+                                      'full_name',
+                                      'party',
+                                      'median_household_income',
+                                      'amerindian_native',
+                                      'asian',
+                                      'black',
+                                      'white',
+                                      'hispanic_latino',
+                                      'lackinsurance',
+                                      'csmoking',
+                                      'diabetes',
+                                      'obesity']]
 
-table_data_df= table_data_df.rename(columns = {'state_district': 'District',
-                                     'full_name': 'Representative',
-                                     'party': 'Political Party',
-                                     'median_household_income': 'Median Income',
-                                     'amerindian_native': 'American Indian/Alaskan Native',
-                                     'asian': 'Asian',
-                                    'black': 'Black',
-                                     'white': 'White',
-                                     'hispanic_latino': "Hispanic/Latino All Races",
-                                     'lackinsurance': 'Uninsured',
-                                     'csmoking': 'Currently Smoking',
-                                     'diabetes': 'Adult Diabetics',
-                                     'obesity': 'Obesity'}, 
-                                   )
+table_data_df = table_data_df.rename(columns={'state_district': 'District',
+                                              'full_name': 'Representative',
+                                              'party': 'Political Party',
+                                              'median_household_income': 'Median Income',
+                                              'amerindian_native': 'American Indian/Alaskan Native',
+                                              'asian': 'Asian',
+                                              'black': 'Black',
+                                              'white': 'White',
+                                              'hispanic_latino': "Hispanic/Latino All Races",
+                                              'lackinsurance': 'Uninsured',
+                                              'csmoking': 'Currently Smoking',
+                                              'diabetes': 'Adult Diabetics',
+                                              'obesity': 'Obesity'},
+                                     )
+healthy_districts_df.to_csv("all_data.csv")
+
+
+data_all = pd.read_csv('all_data.csv')
+data_geo = json.load(open('healthy_districts.geojson'))
+
+# def center():
+#    address = 'Chicago, USA'
+#    geolocator = Nominatim(user_agent="id_explorer")
+#    location = geolocator.geocode(address)
+#    latitude = location.latitude
+#    longitude = location.longitude
+#    return latitude, longitude
+
+# for changing type of the maps
+# add_select = st.sidebar.selectbox("What data do you want to see?",("Open Street Map"))#for calling the function for getting center of maps
+map_sby = folium.Map(tiles="Open Street Map", location=[37, -90], zoom_start=5)  # design for the app
+st.title('Map of USA Congressional Districts')
+folium_static(map_sby)
 
 st.dataframe(table_data_df)
 
+# Adding selection for different data
 
-#Create scatter plots
+dicts = {"totalpop": 'Total Population',
+         "gini_index_of_income_inequality": 'Income Inequality',
+         "median_household_income": 'Median Income',
+         "lackinsurance": 'Uninsured'}
+
+select_data = st.sidebar.radio("totalpop", "gini_index_of_income_inequality", "median_household_income", "lackinsurance")
+
+
+def threshold(data):
+    threshold_scale = np.linspace(data_all[dicts[data]].min(),
+                                  data_all[dicts[data]].max(),
+                                  10, dtype=float)
+  # change the numpy array to a list
+    threshold_scale = threshold_scale.tolist()
+    threshold_scale[-1] = threshold_scale[-1]
+    return threshold_scale
+
+
+def show_maps(data, threshold_scale):
+    maps = folium.Choropleth(geo_data=data_geo,
+                         data=data_all,
+                         columns=['GEOID', dicts[data]],
+                         key_on='feature.properties.GEOID',
+                         threshold_scale=threshold_scale,
+                         fill_color='YlOrRd',
+                         fill_opacity=0.7,
+                         line_opacity=0.2,
+                         legend_name=dicts[data],
+                         highlight=True,
+                         reset=True).add_to(map_sby)
+
+folium_static(map_sby)
+
+show_maps(select_data, threshold(select_data))
+
+# Create scatter plots
 with st.beta_container():
     st.write("This is inside the container")
 
