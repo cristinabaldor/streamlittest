@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -5,7 +6,7 @@ import numpy as np
 import json
 import requests
 import csv
-import geopandas
+# import geopandas
 import folium
 from streamlit_folium import folium_static
 # from bokeh.plotting import figure
